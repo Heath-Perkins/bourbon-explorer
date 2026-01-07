@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Bourbon } from "@/data/bourbons";
 import { Badge } from "@/components/ui/badge";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { CompareButton } from "@/components/CompareButton";
 
 interface BourbonCardProps {
   bourbon: Bourbon;
@@ -16,10 +17,11 @@ export function BourbonCard({ bourbon, index = 0, showFavorite = true }: Bourbon
       className="bourbon-card group block opacity-0 animate-fade-up relative"
       style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
     >
-      {/* Favorite button */}
+      {/* Action buttons */}
       {showFavorite && (
-        <div className="absolute top-2 left-2 z-10">
+        <div className="absolute top-2 left-2 z-10 flex gap-1">
           <FavoriteButton bourbonId={bourbon.id} />
+          <CompareButton bourbonId={bourbon.id} />
         </div>
       )}
 
