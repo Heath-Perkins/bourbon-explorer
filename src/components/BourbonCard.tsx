@@ -71,9 +71,20 @@ export function BourbonCard({ bourbon, index = 0, showFavorite = true }: Bourbon
           )}
         </div>
 
-        {/* Price */}
-        {bourbon.price && (
-          <p className="text-sm font-medium text-bourbon-copper">{bourbon.price}</p>
+        {/* Pricing */}
+        {(bourbon.msrp || bourbon.secondaryPrice) && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            {bourbon.msrp && (
+              <span className="text-green-600 dark:text-green-400 font-medium">
+                MSRP: {bourbon.msrp}
+              </span>
+            )}
+            {bourbon.secondaryPrice && (
+              <span className="text-bourbon-amber font-medium">
+                Secondary: {bourbon.secondaryPrice}
+              </span>
+            )}
+          </div>
         )}
       </div>
     </Link>

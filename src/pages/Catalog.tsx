@@ -10,7 +10,7 @@ import {
   ActiveFilters,
   FilterState 
 } from "@/components/CatalogFilters";
-import { bourbons, categories, priceRanges } from "@/data/bourbons";
+import { bourbons, categories, priceRanges, secondaryPriceRanges } from "@/data/bourbons";
 import { cn } from "@/lib/utils";
 
 // Helper to parse MSRP string to number
@@ -18,6 +18,14 @@ function parseMsrp(msrp?: string): number | null {
   if (!msrp) return null;
   const match = msrp.match(/\$(\d+)/);
   return match ? parseInt(match[1], 10) : null;
+}
+
+// Helper to parse secondary price string to number (takes first number in range)
+function parseSecondaryPrice(price?: string): number | null {
+  if (!price) return null;
+  const match = price.match(/\$(\d+[\d,]*)/);
+  if (!match) return null;
+  return parseInt(match[1].replace(/,/g, ''), 10);
 }
 
 // Helper to match distillery name to filter id
@@ -51,6 +59,7 @@ export default function Catalog() {
     distilleries: [],
     rarities: [],
     priceRange: 'all',
+    secondaryPriceRange: 'all',
     flavors: [],
   });
 
@@ -59,6 +68,7 @@ export default function Catalog() {
       filters.distilleries.length +
       filters.rarities.length +
       (filters.priceRange !== 'all' ? 1 : 0) +
+      (filters.secondaryPriceRange !== 'all' ? 1 : 0) +
       filters.flavors.length
     );
   }, [filters]);
@@ -104,7 +114,19 @@ export default function Catalog() {
           bourbon.flavorProfile.some(bp => bp.toLowerCase().includes(f.toLowerCase()))
         );
       
-      return matchesSearch && matchesCategory && matchesDistillery && matchesRarity && matchesPrice && matchesFlavors;
+      // Secondary Price
+      let matchesSecondaryPrice = true;
+      if (filters.secondaryPriceRange !== 'all') {
+        const secondaryConfig = secondaryPriceRanges.find(p => p.id === filters.secondaryPriceRange);
+        const bourbonSecondary = parseSecondaryPrice(bourbon.secondaryPrice);
+        if (secondaryConfig && 'min' in secondaryConfig && bourbonSecondary !== null) {
+          matchesSecondaryPrice = bourbonSecondary >= secondaryConfig.min && bourbonSecondary < secondaryConfig.max;
+        } else if (secondaryConfig && bourbonSecondary === null) {
+          matchesSecondaryPrice = false;
+        }
+      }
+      
+      return matchesSearch && matchesCategory && matchesDistillery && matchesRarity && matchesPrice && matchesFlavors && matchesSecondaryPrice;
     });
   }, [searchQuery, selectedCategory, filters]);
 
@@ -115,6 +137,7 @@ export default function Catalog() {
       distilleries: [],
       rarities: [],
       priceRange: 'all',
+      secondaryPriceRange: 'all',
       flavors: [],
     });
   };
