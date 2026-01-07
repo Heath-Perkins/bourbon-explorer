@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Droplets, Flame, Clock, PenLine } from "lucide-react";
+import { ArrowLeft, MapPin, Droplets, Flame, Clock, PenLine, DollarSign, TrendingUp } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,8 +81,28 @@ export default function BourbonDetail() {
               <p className="text-xl text-muted-foreground">{bourbon.distillery}</p>
             </div>
 
-            {bourbon.price && (
-              <p className="text-2xl font-semibold text-bourbon-amber">{bourbon.price}</p>
+            {/* Pricing */}
+            {(bourbon.msrp || bourbon.secondaryPrice) && (
+              <div className="flex flex-wrap gap-4">
+                {bourbon.msrp && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">MSRP</p>
+                      <p className="font-semibold text-green-600 dark:text-green-400">{bourbon.msrp}</p>
+                    </div>
+                  </div>
+                )}
+                {bourbon.secondaryPrice && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bourbon-amber/10 border border-bourbon-amber/20">
+                    <TrendingUp className="h-4 w-4 text-bourbon-amber" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Secondary Market</p>
+                      <p className="font-semibold text-bourbon-amber">{bourbon.secondaryPrice}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             <p className="text-muted-foreground leading-relaxed">
