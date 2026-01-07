@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { CompareButton } from "@/components/CompareButton";
 import { bourbons } from "@/data/bourbons";
 
 export default function BourbonDetail() {
@@ -135,6 +136,7 @@ export default function BourbonDetail() {
             {/* CTA */}
             <div className="flex flex-wrap gap-3">
               <FavoriteButton bourbonId={bourbon.id} variant="full" />
+              <CompareButton bourbonId={bourbon.id} variant="full" />
               <Link to={`/diary/new?bourbon=${bourbon.id}`}>
                 <Button variant="bourbon" size="lg" className="gap-2">
                   <PenLine className="h-4 w-4" />
