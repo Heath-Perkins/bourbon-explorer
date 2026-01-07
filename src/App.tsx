@@ -8,6 +8,7 @@ import Catalog from "./pages/Catalog";
 import BourbonDetail from "./pages/BourbonDetail";
 import Diary from "./pages/Diary";
 import NewReview from "./pages/NewReview";
+import Wishlist from "./pages/Wishlist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/bourbon/:id" element={<BourbonDetail />} />
           <Route path="/diary" element={<Diary />} />
           <Route path="/diary/new" element={<NewReview />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

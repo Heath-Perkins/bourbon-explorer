@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { FavoriteButton } from "@/components/FavoriteButton";
 import { bourbons } from "@/data/bourbons";
 
 export default function BourbonDetail() {
@@ -132,12 +133,15 @@ export default function BourbonDetail() {
             </div>
 
             {/* CTA */}
-            <Link to={`/diary/new?bourbon=${bourbon.id}`}>
-              <Button variant="bourbon" size="lg" className="w-full sm:w-auto gap-2">
-                <PenLine className="h-4 w-4" />
-                Log a Tasting
-              </Button>
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <FavoriteButton bourbonId={bourbon.id} variant="full" />
+              <Link to={`/diary/new?bourbon=${bourbon.id}`}>
+                <Button variant="bourbon" size="lg" className="gap-2">
+                  <PenLine className="h-4 w-4" />
+                  Log a Tasting
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

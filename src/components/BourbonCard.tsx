@@ -1,19 +1,28 @@
 import { Link } from "react-router-dom";
 import { Bourbon } from "@/data/bourbons";
 import { Badge } from "@/components/ui/badge";
+import { FavoriteButton } from "@/components/FavoriteButton";
 
 interface BourbonCardProps {
   bourbon: Bourbon;
   index?: number;
+  showFavorite?: boolean;
 }
 
-export function BourbonCard({ bourbon, index = 0 }: BourbonCardProps) {
+export function BourbonCard({ bourbon, index = 0, showFavorite = true }: BourbonCardProps) {
   return (
     <Link
       to={`/bourbon/${bourbon.id}`}
-      className="bourbon-card group block opacity-0 animate-fade-up"
+      className="bourbon-card group block opacity-0 animate-fade-up relative"
       style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
     >
+      {/* Favorite button */}
+      {showFavorite && (
+        <div className="absolute top-2 left-2 z-10">
+          <FavoriteButton bourbonId={bourbon.id} />
+        </div>
+      )}
+
       {/* Color swatch header */}
       <div 
         className="h-24 relative overflow-hidden"
