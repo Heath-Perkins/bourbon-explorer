@@ -8,11 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StarRating } from "@/components/StarRating";
 import { ColorPicker } from "@/components/ColorPicker";
 import { FlavorSelector } from "@/components/FlavorSelector";
+import { PhotoUpload } from "@/components/PhotoUpload";
 import { bourbons } from "@/data/bourbons";
 import { glasswareOptions } from "@/data/reviews";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ export default function NewReview() {
     glassware: "",
     waterAdded: false,
     iceAdded: false,
+    photos: [] as string[],
   });
 
   const [customBourbon, setCustomBourbon] = useState({
@@ -237,6 +239,23 @@ export default function NewReview() {
                   </div>
                 </TabsContent>
               </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Photos */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Photos</CardTitle>
+              <CardDescription>
+                Add photos of the bottle, label, or your pour
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PhotoUpload
+                photos={formData.photos}
+                onChange={(photos) => setFormData({ ...formData, photos })}
+                maxPhotos={3}
+              />
             </CardContent>
           </Card>
 
