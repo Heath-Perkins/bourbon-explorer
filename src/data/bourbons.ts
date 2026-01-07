@@ -2773,7 +2773,6 @@ const craftBourbons: Bourbon[] = [
     age: "7 years",
     mashBill: "75% corn, 21% rye, 4% malted barley",
     origin: "Lawrenceburg, Indiana (MGP)",
-    origin: "Sourced/Indiana",
     description: "Sourced MGP bourbon with high rye content. Bold spice with notes of cherry, vanilla, and oak.",
     msrp: "$60",
     secondaryPrice: "$70-90",
