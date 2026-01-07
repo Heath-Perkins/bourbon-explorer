@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Share2, Check } from "lucide-react";
+import { ArrowLeft, Share2, Check, Plus } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StarRating } from "@/components/StarRating";
 import { ColorPicker } from "@/components/ColorPicker";
 import { FlavorSelector } from "@/components/FlavorSelector";
@@ -20,6 +21,10 @@ export default function NewReview() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedBourbonId = searchParams.get("bourbon");
+
+  const [bourbonMode, setBourbonMode] = useState<"library" | "custom">(
+    preselectedBourbonId ? "library" : "library"
+  );
 
   const [formData, setFormData] = useState({
     bourbonId: preselectedBourbonId || "",
@@ -36,15 +41,37 @@ export default function NewReview() {
     iceAdded: false,
   });
 
+  const [customBourbon, setCustomBourbon] = useState({
+    name: "",
+    distillery: "",
+    proof: "",
+    age: "",
+    origin: "",
+    mashBill: "",
+  });
+
   const selectedBourbon = bourbons.find(b => b.id === formData.bourbonId);
+
+  const getBourbonName = () => {
+    if (bourbonMode === "library" && selectedBourbon) {
+      return selectedBourbon.name;
+    }
+    return customBourbon.name || "My Bourbon";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.bourbonId) {
+    if (bourbonMode === "library" && !formData.bourbonId) {
       toast.error("Please select a bourbon");
       return;
     }
+    
+    if (bourbonMode === "custom" && !customBourbon.name.trim()) {
+      toast.error("Please enter the bourbon name");
+      return;
+    }
+    
     if (formData.rating === 0) {
       toast.error("Please add a rating");
       return;
@@ -52,22 +79,23 @@ export default function NewReview() {
 
     // In a real app, this would save to a database
     toast.success("Tasting note saved!", {
-      description: `Your review for ${selectedBourbon?.name} has been added to your diary.`
+      description: `Your review for ${getBourbonName()} has been added to your diary.`
     });
     
     navigate("/diary");
   };
 
   const handleShare = () => {
+    const bourbonName = getBourbonName();
     if (navigator.share) {
       navigator.share({
-        title: `Bourbon Tasting: ${selectedBourbon?.name || 'My Bourbon'}`,
+        title: `Bourbon Tasting: ${bourbonName}`,
         text: formData.overallThoughts || "Check out my bourbon tasting notes!",
         url: window.location.href,
       }).catch(() => {});
     } else {
       navigator.clipboard.writeText(
-        `🥃 Bourbon Tasting: ${selectedBourbon?.name}\n⭐ Rating: ${formData.rating}/5\n💭 ${formData.overallThoughts}`
+        `🥃 Bourbon Tasting: ${bourbonName}\n⭐ Rating: ${formData.rating}/5\n💭 ${formData.overallThoughts}`
       );
       toast.success("Copied to clipboard!");
     }
@@ -101,27 +129,114 @@ export default function NewReview() {
               <CardTitle className="text-lg">Select Bourbon</CardTitle>
             </CardHeader>
             <CardContent>
-              <Select 
-                value={formData.bourbonId} 
-                onValueChange={(value) => setFormData({ ...formData, bourbonId: value })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose a bourbon..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {bourbons.map((bourbon) => (
-                    <SelectItem key={bourbon.id} value={bourbon.id}>
-                      <span className="flex items-center gap-2">
-                        <span 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: bourbon.color }} 
-                        />
-                        {bourbon.name} - {bourbon.distillery}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Tabs value={bourbonMode} onValueChange={(v) => setBourbonMode(v as "library" | "custom")}>
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="library">From Library</TabsTrigger>
+                  <TabsTrigger value="custom" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Custom Entry
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="library" className="mt-0">
+                  <Select 
+                    value={formData.bourbonId} 
+                    onValueChange={(value) => setFormData({ ...formData, bourbonId: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a bourbon..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bourbons.map((bourbon) => (
+                        <SelectItem key={bourbon.id} value={bourbon.id}>
+                          <span className="flex items-center gap-2">
+                            <span 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: bourbon.color }} 
+                            />
+                            {bourbon.name} - {bourbon.distillery}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Can&apos;t find your bourbon? Switch to &quot;Custom Entry&quot; to add it manually.
+                  </p>
+                </TabsContent>
+                
+                <TabsContent value="custom" className="mt-0 space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="customName">Bourbon Name *</Label>
+                      <Input
+                        id="customName"
+                        placeholder="e.g., Pappy Van Winkle 15 Year"
+                        value={customBourbon.name}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, name: e.target.value })}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="customDistillery">Distillery</Label>
+                      <Input
+                        id="customDistillery"
+                        placeholder="e.g., Buffalo Trace"
+                        value={customBourbon.distillery}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, distillery: e.target.value })}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="customProof">Proof</Label>
+                      <Input
+                        id="customProof"
+                        type="number"
+                        placeholder="e.g., 107"
+                        value={customBourbon.proof}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, proof: e.target.value })}
+                        min={0}
+                        max={200}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="customAge">Age Statement</Label>
+                      <Input
+                        id="customAge"
+                        placeholder="e.g., 15 years"
+                        value={customBourbon.age}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, age: e.target.value })}
+                        maxLength={50}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="customOrigin">Origin</Label>
+                      <Input
+                        id="customOrigin"
+                        placeholder="e.g., Frankfort, Kentucky"
+                        value={customBourbon.origin}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, origin: e.target.value })}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="customMashBill">Mash Bill (optional)</Label>
+                      <Input
+                        id="customMashBill"
+                        placeholder="e.g., 75% corn, 13% rye, 12% malted barley"
+                        value={customBourbon.mashBill}
+                        onChange={(e) => setCustomBourbon({ ...customBourbon, mashBill: e.target.value })}
+                        maxLength={200}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
@@ -152,6 +267,7 @@ export default function NewReview() {
                   value={formData.bouquet}
                   onChange={(e) => setFormData({ ...formData, bouquet: e.target.value })}
                   rows={3}
+                  maxLength={1000}
                 />
               </div>
               
@@ -163,6 +279,7 @@ export default function NewReview() {
                   value={formData.taste}
                   onChange={(e) => setFormData({ ...formData, taste: e.target.value })}
                   rows={3}
+                  maxLength={1000}
                 />
               </div>
               
@@ -174,6 +291,7 @@ export default function NewReview() {
                   value={formData.finish}
                   onChange={(e) => setFormData({ ...formData, finish: e.target.value })}
                   rows={2}
+                  maxLength={500}
                 />
               </div>
             </CardContent>
@@ -206,6 +324,7 @@ export default function NewReview() {
                     placeholder="Where are you tasting?"
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    maxLength={100}
                   />
                 </div>
                 
@@ -260,6 +379,7 @@ export default function NewReview() {
                 value={formData.overallThoughts}
                 onChange={(e) => setFormData({ ...formData, overallThoughts: e.target.value })}
                 rows={4}
+                maxLength={2000}
               />
             </CardContent>
           </Card>
