@@ -102,6 +102,26 @@ export default function BourbonDetail() {
                     </div>
                   </div>
                 )}
+                {bourbon.msrp && bourbon.secondaryPrice && (() => {
+                  const msrpNum = parseInt(bourbon.msrp.replace(/[^0-9]/g, ''));
+                  const secondaryNum = parseInt(bourbon.secondaryPrice.replace(/[^0-9]/g, ''));
+                  if (msrpNum && secondaryNum) {
+                    const markup = ((secondaryNum - msrpNum) / msrpNum) * 100;
+                    const color = markup <= 25 ? "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20" 
+                      : markup <= 100 ? "text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20"
+                      : markup <= 300 ? "text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/20"
+                      : "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20";
+                    return (
+                      <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${color}`}>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Markup</p>
+                          <p className="font-semibold">+{markup.toFixed(0)}%</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             )}
 
