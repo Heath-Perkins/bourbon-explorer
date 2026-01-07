@@ -1,31 +1,125 @@
 import { useState, useMemo } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Header } from "@/components/Header";
 import { BourbonCard } from "@/components/BourbonCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { bourbons, categories } from "@/data/bourbons";
+import { 
+  DesktopFilters, 
+  MobileFilters, 
+  ActiveFilters,
+  FilterState 
+} from "@/components/CatalogFilters";
+import { bourbons, categories, priceRanges } from "@/data/bourbons";
 import { cn } from "@/lib/utils";
+
+// Helper to parse MSRP string to number
+function parseMsrp(msrp?: string): number | null {
+  if (!msrp) return null;
+  const match = msrp.match(/\$(\d+)/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+// Helper to match distillery name to filter id
+function matchDistillery(distilleryName: string, filterId: string): boolean {
+  const name = distilleryName.toLowerCase();
+  const mappings: Record<string, string[]> = {
+    'buffalo-trace': ['buffalo trace'],
+    'heaven-hill': ['heaven hill', 'evan williams', 'elijah craig', 'larceny', 'henry mckenna'],
+    'wild-turkey': ['wild turkey'],
+    'jim-beam': ['jim beam', 'beam', 'bookers', 'knob creek', 'basil hayden', 'baker'],
+    'four-roses': ['four roses'],
+    'makers-mark': ["maker's mark", 'makers mark'],
+    'brown-forman': ['brown-forman', 'old forester', 'woodford reserve'],
+    'barton-1792': ['barton', '1792'],
+    'michters': ["michter's", 'michters'],
+    'angels-envy': ["angel's envy", 'angels envy'],
+    'bardstown': ['bardstown bourbon'],
+    'craft': ['new riff', 'wilderness trail', 'peerless', 'castle & key', 'rabbit hole', 'starlight'],
+    'mgp': ['mgp', 'lawrenceburg'],
+    'antique': ['stitzel-weller', 'old fitzgerald', 'antique', 'estate', 'pre-fire'],
+  };
+  
+  const keywords = mappings[filterId] || [filterId.replace('-', ' ')];
+  return keywords.some(keyword => name.includes(keyword));
+}
 
 export default function Catalog() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    distilleries: [],
+    rarities: [],
+    priceRange: 'all',
+    flavors: [],
+  });
+
+  const activeFilterCount = useMemo(() => {
+    return (
+      filters.distilleries.length +
+      filters.rarities.length +
+      (filters.priceRange !== 'all' ? 1 : 0) +
+      filters.flavors.length
+    );
+  }, [filters]);
 
   const filteredBourbons = useMemo(() => {
     return bourbons.filter((bourbon) => {
+      // Search
       const matchesSearch = 
         bourbon.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         bourbon.distillery.toLowerCase().includes(searchQuery.toLowerCase()) ||
         bourbon.flavorProfile.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()));
       
+      // Category
       const matchesCategory = 
         selectedCategory === "all" || bourbon.category === selectedCategory;
       
-      return matchesSearch && matchesCategory;
+      // Distillery
+      const matchesDistillery = 
+        filters.distilleries.length === 0 ||
+        filters.distilleries.some(d => matchDistillery(bourbon.distillery, d));
+      
+      // Rarity
+      const matchesRarity = 
+        filters.rarities.length === 0 ||
+        filters.rarities.includes(bourbon.rarity);
+      
+      // Price
+      let matchesPrice = true;
+      if (filters.priceRange !== 'all') {
+        const priceConfig = priceRanges.find(p => p.id === filters.priceRange);
+        const bourbonMsrp = parseMsrp(bourbon.msrp);
+        if (priceConfig && 'min' in priceConfig && bourbonMsrp !== null) {
+          matchesPrice = bourbonMsrp >= priceConfig.min && bourbonMsrp < priceConfig.max;
+        } else if (priceConfig && bourbonMsrp === null) {
+          matchesPrice = false;
+        }
+      }
+      
+      // Flavors
+      const matchesFlavors = 
+        filters.flavors.length === 0 ||
+        filters.flavors.some(f => 
+          bourbon.flavorProfile.some(bp => bp.toLowerCase().includes(f.toLowerCase()))
+        );
+      
+      return matchesSearch && matchesCategory && matchesDistillery && matchesRarity && matchesPrice && matchesFlavors;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, filters]);
+
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setFilters({
+      distilleries: [],
+      rarities: [],
+      priceRange: 'all',
+      flavors: [],
+    });
+  };
+
+  const hasActiveFilters = searchQuery || selectedCategory !== "all" || activeFilterCount > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,13 +132,13 @@ export default function Catalog() {
             Bourbon Catalog
           </h1>
           <p className="text-muted-foreground max-w-2xl">
-            Explore our comprehensive collection of bourbons. Search by name, distillery, 
-            or flavor profile to find your next favorite pour.
+            Explore our comprehensive collection of {bourbons.length}+ bourbons. Filter by distillery, 
+            rarity, price, or flavor profile to find your perfect pour.
           </p>
         </div>
       </section>
 
-      {/* Search and Filters */}
+      {/* Search and Category Bar */}
       <section className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -67,22 +161,16 @@ export default function Catalog() {
               )}
             </div>
             
-            {/* Filter toggle (mobile) */}
-            <Button 
-              variant="outline" 
-              className="sm:hidden"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <SlidersHorizontal className="h-4 w-4 mr-2" />
-              Filters
-            </Button>
+            {/* Mobile filter trigger */}
+            <MobileFilters 
+              filters={filters} 
+              onFiltersChange={setFilters} 
+              activeFilterCount={activeFilterCount}
+            />
           </div>
 
           {/* Category filters */}
-          <div className={cn(
-            "flex flex-wrap gap-2 mt-4 transition-all duration-300",
-            showFilters ? "block" : "hidden sm:flex"
-          )}>
+          <div className="flex flex-wrap gap-2 mt-4">
             {categories.map((category) => (
               <button
                 key={category.id}
@@ -98,46 +186,65 @@ export default function Catalog() {
               </button>
             ))}
           </div>
+
+          {/* Active filters display */}
+          {activeFilterCount > 0 && (
+            <div className="mt-4">
+              <ActiveFilters filters={filters} onFiltersChange={setFilters} />
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Results */}
+      {/* Main Content with Sidebar */}
       <section className="py-8 md:py-12">
         <div className="container mx-auto px-4">
-          {/* Results count */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-muted-foreground">
-              Showing <span className="font-medium text-foreground">{filteredBourbons.length}</span> bourbons
-            </p>
-            {(searchQuery || selectedCategory !== "all") && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  setSearchQuery("");
-                  setSelectedCategory("all");
-                }}
-              >
-                Clear filters
-              </Button>
-            )}
-          </div>
+          <div className="flex gap-8">
+            {/* Desktop Sidebar Filters */}
+            <DesktopFilters 
+              filters={filters} 
+              onFiltersChange={setFilters} 
+              activeFilterCount={activeFilterCount}
+            />
 
-          {/* Grid */}
-          {filteredBourbons.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredBourbons.map((bourbon, index) => (
-                <BourbonCard key={bourbon.id} bourbon={bourbon} index={index} />
-              ))}
+            {/* Results */}
+            <div className="flex-1 min-w-0">
+              {/* Results count */}
+              <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{filteredBourbons.length}</span> of {bourbons.length} bourbons
+                </p>
+                {hasActiveFilters && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearAllFilters}
+                  >
+                    Clear all filters
+                  </Button>
+                )}
+              </div>
+
+              {/* Grid */}
+              {filteredBourbons.length > 0 ? (
+                <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredBourbons.map((bourbon, index) => (
+                    <BourbonCard key={bourbon.id} bourbon={bourbon} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-lg font-medium mb-2">No bourbons found</p>
+                  <p className="text-muted-foreground mb-4">
+                    Try adjusting your search or filters
+                  </p>
+                  <Button variant="outline" onClick={clearAllFilters}>
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-lg font-medium mb-2">No bourbons found</p>
-              <p className="text-muted-foreground">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </div>
