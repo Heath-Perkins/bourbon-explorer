@@ -12,6 +12,7 @@ import NewReview from "./pages/NewReview";
 import Wishlist from "./pages/Wishlist";
 import Compare from "./pages/Compare";
 import ValueCalculator from "./pages/ValueCalculator";
+import Recommendations from "./pages/Recommendations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/compare" element={<Compare />} />
           <Route path="/value" element={<ValueCalculator />} />
+          <Route path="/recommendations" element={<Recommendations />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <CompareBar />

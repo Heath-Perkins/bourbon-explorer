@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Wine, BookOpen, Home, Search, Heart, TrendingUp } from "lucide-react";
+import { Menu, X, Wine, BookOpen, Home, Search, Heart, TrendingUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/catalog", label: "Catalog", icon: Search },
+  { href: "/recommendations", label: "For You", icon: Sparkles },
   { href: "/value", label: "Value", icon: TrendingUp },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/diary", label: "Diary", icon: BookOpen },
