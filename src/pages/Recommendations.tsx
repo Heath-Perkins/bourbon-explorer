@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { bourbons, Bourbon } from "@/data/bourbons";
-import { sampleReviews, commonFlavors } from "@/data/reviews";
-import { Sparkles, History, Sliders, Star, Wine } from "lucide-react";
-
+import { sampleReviews } from "@/data/reviews";
+import { Sparkles, History, Sliders, Star, Wine, Share2, Check, Copy } from "lucide-react";
+import { toast } from "sonner";
 function calculateFlavorScore(bourbon: Bourbon, preferredFlavors: string[]): number {
   if (preferredFlavors.length === 0) return 0;
   const matches = bourbon.flavorProfile.filter((f) =>
@@ -40,11 +40,50 @@ function getFlavorProfileFromReviews(): { flavors: string[]; bourbonIds: string[
 export default function Recommendations() {
   const [selectedFlavors, setSelectedFlavors] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("preferences");
+  const [copied, setCopied] = useState(false);
 
   const { flavors: reviewFlavors, bourbonIds: reviewedBourbonIds } = useMemo(
     () => getFlavorProfileFromReviews(),
     []
   );
+
+  const shareRecommendations = async (recommendations: { bourbon: Bourbon; score: number }[], title: string) => {
+    const bourbonList = recommendations
+      .slice(0, 5)
+      .map((r, i) => `${i + 1}. ${r.bourbon.name} (${Math.round(r.score)}% match)`)
+      .join("\n");
+
+    const shareText = `🥃 My Bourbon Recommendations from Bourbon Vault\n\n${title}:\n${bourbonList}\n\nDiscover your perfect pour at Bourbon Vault!`;
+    const shareUrl = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "My Bourbon Recommendations",
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success("Shared successfully!");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          fallbackCopy(shareText + "\n" + shareUrl);
+        }
+      }
+    } else {
+      fallbackCopy(shareText + "\n" + shareUrl);
+    }
+  };
+
+  const fallbackCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
   const preferenceRecommendations = useMemo(() => {
     if (selectedFlavors.length === 0) return [];
@@ -162,12 +201,23 @@ export default function Recommendations() {
 
             {preferenceRecommendations.length > 0 ? (
               <section>
-                <h2 className="font-serif text-2xl font-semibold mb-4">
-                  Recommended for You
-                  <span className="text-muted-foreground text-base font-normal ml-2">
-                    ({preferenceRecommendations.length} matches)
-                  </span>
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-2xl font-semibold">
+                    Recommended for You
+                    <span className="text-muted-foreground text-base font-normal ml-2">
+                      ({preferenceRecommendations.length} matches)
+                    </span>
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => shareRecommendations(preferenceRecommendations, "Based on my flavor preferences")}
+                    className="gap-2"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                    Share
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {preferenceRecommendations.map(({ bourbon, score }, index) => (
                     <div key={bourbon.id} className="relative">
@@ -228,12 +278,23 @@ export default function Recommendations() {
 
             {reviewBasedRecommendations.length > 0 ? (
               <section>
-                <h2 className="font-serif text-2xl font-semibold mb-4">
-                  Based on Your Diary
-                  <span className="text-muted-foreground text-base font-normal ml-2">
-                    (excluding already reviewed)
-                  </span>
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-2xl font-semibold">
+                    Based on Your Diary
+                    <span className="text-muted-foreground text-base font-normal ml-2">
+                      (excluding already reviewed)
+                    </span>
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => shareRecommendations(reviewBasedRecommendations, "Based on my tasting diary")}
+                    className="gap-2"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                    Share
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {reviewBasedRecommendations.map(({ bourbon, score }, index) => (
                     <div key={bourbon.id} className="relative">
@@ -258,10 +319,21 @@ export default function Recommendations() {
 
             {topRatedRecommendations.length > 0 && (
               <section>
-                <h2 className="font-serif text-2xl font-semibold mb-4 flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-500" />
-                  Similar to Your Top Rated
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-serif text-2xl font-semibold flex items-center gap-2">
+                    <Star className="h-5 w-5 text-yellow-500" />
+                    Similar to Your Top Rated
+                  </h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => shareRecommendations(topRatedRecommendations, "Similar to my top-rated bourbons")}
+                    className="gap-2"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+                    Share
+                  </Button>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {topRatedRecommendations.map(({ bourbon, score }, index) => (
                     <div key={bourbon.id} className="relative">
