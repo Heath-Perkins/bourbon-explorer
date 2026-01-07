@@ -2963,3 +2963,13 @@ export const priceRanges = [
   { id: 'luxury', label: 'Luxury ($100-$300)', min: 100, max: 300 },
   { id: 'ultra', label: 'Ultra Premium ($300+)', min: 300, max: Infinity },
 ];
+
+export const secondaryPriceRanges = [
+  { id: 'all', label: 'All Secondary Prices' },
+  { id: 'under100', label: 'Under $100', min: 0, max: 100 },
+  { id: '100to250', label: '$100 - $250', min: 100, max: 250 },
+  { id: '250to500', label: '$250 - $500', min: 250, max: 500 },
+  { id: '500to1000', label: '$500 - $1,000', min: 500, max: 1000 },
+  { id: '1000to2500', label: '$1,000 - $2,500', min: 1000, max: 2500 },
+  { id: 'over2500', label: '$2,500+', min: 2500, max: Infinity },
+];

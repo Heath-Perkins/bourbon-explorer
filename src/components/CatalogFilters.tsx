@@ -17,13 +17,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { distilleries, rarityLevels, priceRanges, flavorCategories } from "@/data/bourbons";
+import { distilleries, rarityLevels, priceRanges, secondaryPriceRanges, flavorCategories } from "@/data/bourbons";
 import { cn } from "@/lib/utils";
 
 export interface FilterState {
   distilleries: string[];
   rarities: string[];
   priceRange: string;
+  secondaryPriceRange: string;
   flavors: string[];
 }
 
@@ -81,6 +82,10 @@ function FilterContent({ filters, onFiltersChange }: Omit<CatalogFiltersProps, '
 
   const setPriceRange = (id: string) => {
     onFiltersChange({ ...filters, priceRange: id });
+  };
+
+  const setSecondaryPriceRange = (id: string) => {
+    onFiltersChange({ ...filters, secondaryPriceRange: id });
   };
 
   return (
@@ -150,6 +155,27 @@ function FilterContent({ filters, onFiltersChange }: Omit<CatalogFiltersProps, '
         </div>
       </FilterSection>
 
+      {/* Secondary Price Range */}
+      <FilterSection title="Secondary Market Price" defaultOpen={false}>
+        <div className="space-y-2">
+          {secondaryPriceRanges.map((price) => (
+            <div key={price.id} className="flex items-center space-x-2">
+              <Checkbox
+                id={`secondary-${price.id}`}
+                checked={filters.secondaryPriceRange === price.id}
+                onCheckedChange={() => setSecondaryPriceRange(price.id === filters.secondaryPriceRange ? 'all' : price.id)}
+              />
+              <Label 
+                htmlFor={`secondary-${price.id}`}
+                className="text-sm font-normal cursor-pointer"
+              >
+                {price.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+      </FilterSection>
+
       {/* Flavors */}
       <FilterSection title="Flavor Profile" defaultOpen={false}>
         <div className="flex flex-wrap gap-2">
@@ -180,6 +206,7 @@ export function DesktopFilters({ filters, onFiltersChange, activeFilterCount }: 
       distilleries: [],
       rarities: [],
       priceRange: 'all',
+      secondaryPriceRange: 'all',
       flavors: [],
     });
   };
@@ -218,6 +245,7 @@ export function MobileFilters({ filters, onFiltersChange, activeFilterCount }: C
       distilleries: [],
       rarities: [],
       priceRange: 'all',
+      secondaryPriceRange: 'all',
       flavors: [],
     });
   };
@@ -278,7 +306,12 @@ export function ActiveFilters({
 
   if (filters.priceRange !== 'all') {
     const price = priceRanges.find(x => x.id === filters.priceRange);
-    if (price) activeFilters.push({ type: 'price', value: filters.priceRange, label: price.label });
+    if (price) activeFilters.push({ type: 'price', value: filters.priceRange, label: `MSRP: ${price.label}` });
+  }
+
+  if (filters.secondaryPriceRange !== 'all') {
+    const secondary = secondaryPriceRanges.find(x => x.id === filters.secondaryPriceRange);
+    if (secondary) activeFilters.push({ type: 'secondary', value: filters.secondaryPriceRange, label: `Secondary: ${secondary.label}` });
   }
 
   filters.flavors.forEach(f => {
@@ -297,6 +330,9 @@ export function ActiveFilters({
         break;
       case 'price':
         onFiltersChange({ ...filters, priceRange: 'all' });
+        break;
+      case 'secondary':
+        onFiltersChange({ ...filters, secondaryPriceRange: 'all' });
         break;
       case 'flavor':
         onFiltersChange({ ...filters, flavors: filters.flavors.filter(f => f !== value) });
