@@ -16,12 +16,15 @@ import { FlavorSelector } from "@/components/FlavorSelector";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { bourbons } from "@/data/bourbons";
 import { glasswareOptions } from "@/data/reviews";
+import { useTastingNotes } from "@/hooks/useTastingNotes";
 import { toast } from "sonner";
 
 export default function NewReview() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedBourbonId = searchParams.get("bourbon");
+  const { addNote } = useTastingNotes();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [bourbonMode, setBourbonMode] = useState<"library" | "custom">(
     preselectedBourbonId ? "library" : "library"
@@ -61,7 +64,15 @@ export default function NewReview() {
     return customBourbon.name || "My Bourbon";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const getBourbonId = () => {
+    if (bourbonMode === "library" && selectedBourbon) {
+      return selectedBourbon.id;
+    }
+    // For custom bourbons, create a unique ID
+    return `custom-${Date.now()}`;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (bourbonMode === "library" && !formData.bourbonId) {
@@ -79,12 +90,33 @@ export default function NewReview() {
       return;
     }
 
-    // In a real app, this would save to a database
-    toast.success("Tasting note saved!", {
-      description: `Your review for ${getBourbonName()} has been added to your diary.`
+    setIsSubmitting(true);
+
+    const { error } = await addNote({
+      bourbon_id: getBourbonId(),
+      bourbon_name: getBourbonName(),
+      visible_color: formData.visibleColor,
+      bouquet: formData.bouquet || null,
+      taste: formData.taste || null,
+      finish: formData.finish || null,
+      overall_thoughts: formData.overallThoughts || null,
+      discernible_flavors: formData.discernibleFlavors,
+      rating: formData.rating,
+      location: formData.location || null,
+      glassware: formData.glassware || null,
+      water_added: formData.waterAdded,
+      ice_added: formData.iceAdded,
+      photo_url: formData.photos[0] || null,
     });
-    
-    navigate("/diary");
+
+    setIsSubmitting(false);
+
+    if (!error) {
+      toast.success("Tasting note saved!", {
+        description: `Your review for ${getBourbonName()} has been added to your diary.`
+      });
+      navigate("/diary");
+    }
   };
 
   const handleShare = () => {
@@ -420,9 +452,15 @@ export default function NewReview() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button type="submit" variant="bourbon" size="lg" className="gap-2 flex-1 sm:flex-none">
+            <Button 
+              type="submit" 
+              variant="bourbon" 
+              size="lg" 
+              className="gap-2 flex-1 sm:flex-none"
+              disabled={isSubmitting}
+            >
               <Check className="h-4 w-4" />
-              Save Tasting Note
+              {isSubmitting ? "Saving..." : "Save Tasting Note"}
             </Button>
             
             <Button 
